@@ -1,6 +1,8 @@
 package kz.taskbar.app.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -14,6 +16,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -30,6 +34,7 @@ private enum class StatusFilter(val text: String) {
 @Composable
 fun TasksScreen(tasks: List<TaskEntity>, onNew: () -> Unit, onToggle: (TaskEntity) -> Unit,
                 onEdit: (TaskEntity) -> Unit, onDelete: (TaskEntity) -> Unit) {
+    val keyboardController = LocalSoftwareKeyboardController.current
     var search by rememberSaveable { mutableStateOf("") }
     var status by remember { mutableStateOf(StatusFilter.ALL) }
     var category by remember { mutableStateOf<TaskCategory?>(null) }
@@ -64,6 +69,8 @@ fun TasksScreen(tasks: List<TaskEntity>, onNew: () -> Unit, onToggle: (TaskEntit
             Spacer(Modifier.height(10.dp))
             OutlinedTextField(value=search, onValueChange={ search=it },
                 modifier=Modifier.fillMaxWidth().testTag("task_search"), singleLine=true,
+                keyboardOptions=KeyboardOptions(imeAction=ImeAction.Search),
+                keyboardActions=KeyboardActions(onSearch={ keyboardController?.hide() }),
                 placeholder={ Text("Найти задачу...", fontSize=14.sp) },
                 leadingIcon={ Icon(Icons.Outlined.Search, null, tint=MaterialTheme.colorScheme.onSurfaceVariant) },
                 trailingIcon={ if(search.isNotBlank()) IconButton(onClick={search=""}) {

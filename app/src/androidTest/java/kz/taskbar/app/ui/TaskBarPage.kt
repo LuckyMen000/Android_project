@@ -6,14 +6,15 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.junit4.ComposeTestRule
-import androidx.test.espresso.Espresso
 
 /** Page Object: all UI selectors and user actions in one place. */
 class TaskBarPage(private val rule: ComposeTestRule) {
@@ -32,9 +33,10 @@ class TaskBarPage(private val rule: ComposeTestRule) {
     fun addTask(title: String) = apply {
         rule.onNodeWithTag("add_task_button").performClick()
         rule.onNodeWithTag("task_title_input").performTextInput(title)
-        // Prevent the software keyboard from obscuring the Save action.
-        Espresso.closeSoftKeyboard()
-        rule.onNodeWithTag("task_save_button").performClick()
+        // Use the Compose IME action instead of Espresso's Activity-root keyboard helper:
+        // the editor is a Dialog with its own focused window.
+        rule.onNodeWithTag("task_title_input").performImeAction()
+        rule.onNodeWithTag("task_save_button").performScrollTo().performClick()
         // A successful save dismisses the editor; fail here if validation prevents it.
         rule.waitUntil(timeoutMillis = 15_000) {
             rule.onAllNodesWithTag("task_save_button").fetchSemanticsNodes().isEmpty()
@@ -43,20 +45,19 @@ class TaskBarPage(private val rule: ComposeTestRule) {
 
     fun search(query: String) = apply {
         rule.onNodeWithTag("task_search").performTextReplacement(query)
-        // Ensure the LazyColumn has room to render the filtered result.
-        Espresso.closeSoftKeyboard()
+        // Hide the keyboard through the field's explicit Search action.
+        rule.onNodeWithTag("task_search").performImeAction()
         rule.waitForIdle()
     }
 
     fun assertTaskVisible(title: String) = apply {
-        // LazyColumn only composes visible rows, so scroll to the item explicitly.
-        // Search must have narrowed the results to exactly one task card.
+        // First confirm the filter found exactly one task. This observable UI
+        // state is updated from Room, so a missing save cannot pass the test.
         rule.waitUntil(timeoutMillis = 15_000) {
-            runCatching {
-                rule.onNodeWithTag("tasks_screen").performScrollToNode(taskCard)
-                rule.onAllNodes(taskCard).fetchSemanticsNodes().size == 1
-            }.getOrDefault(false)
+            rule.onAllNodesWithText("Найдено: 1").fetchSemanticsNodes().isNotEmpty()
         }
+        // LazyColumn only composes visible rows; scroll to the actual card.
+        rule.onNodeWithTag("tasks_screen").performScrollToNode(taskCard)
         rule.onNode(taskCard).assertIsDisplayed()
         rule.onNodeWithTag("task_item_title", useUnmergedTree = true)
             .assertTextEquals(title)

@@ -3,6 +3,8 @@ package kz.taskbar.app.ui.components
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import androidx.compose.foundation.background
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -20,6 +22,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -40,6 +44,7 @@ import java.util.Locale
 @Composable
 fun TaskEditorSheet(task: TaskEntity?, onDismiss: () -> Unit, onSave: (TaskDraft) -> Unit) {
     val context = LocalContext.current
+    val keyboardController = LocalSoftwareKeyboardController.current
     val sheet = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var title by rememberSaveable(task?.id) { mutableStateOf(task?.title.orEmpty()) }
     var description by rememberSaveable(task?.id) { mutableStateOf(task?.description.orEmpty()) }
@@ -70,6 +75,8 @@ fun TaskEditorSheet(task: TaskEntity?, onDismiss: () -> Unit, onSave: (TaskDraft
             OutlinedTextField(value=title,
                 onValueChange={ if(it.length<=TaskValidator.MAX_TITLE) title=it },
                 modifier=Modifier.fillMaxWidth().testTag("task_title_input"), singleLine=true,
+                keyboardOptions=KeyboardOptions(imeAction=ImeAction.Done),
+                keyboardActions=KeyboardActions(onDone={ keyboardController?.hide() }),
                 placeholder={Text("Что нужно сделать?")},
                 isError=showValidation && validation!=null,
                 shape=RoundedCornerShape(17.dp),
