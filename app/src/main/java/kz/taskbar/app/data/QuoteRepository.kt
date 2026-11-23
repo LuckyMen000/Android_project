@@ -43,20 +43,31 @@ fun defaultQuoteApi(): QuoteApi {
         .build().create(QuoteApi::class.java)
 }
 
+/** A small logging boundary keeps regular JVM tests independent of android.util.Log. */
+fun interface QuoteEventLogger {
+    fun log(success: Boolean, message: String)
+}
+
+private val androidQuoteEventLogger = QuoteEventLogger { success, message ->
+    if (success) TaskBarLog.i(TaskBarLog.NETWORK, message)
+    else TaskBarLog.w(TaskBarLog.NETWORK, message)
+}
+
 class NetworkQuoteRepository(
     private val api: QuoteApi = defaultQuoteApi(),
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
+    private val logger: QuoteEventLogger = androidQuoteEventLogger,
 ) : QuoteRepository {
     override suspend fun getQuote(): DailyQuote = withContext(dispatcher) {
         try {
             val result = api.randomQuote()
             if (result.quote.isBlank()) error("Empty quote")
-            TaskBarLog.i(TaskBarLog.NETWORK, "Quote HTTP request succeeded")
+            logger.log(true, "Quote HTTP request succeeded")
             DailyQuote(result.quote.trim(), result.author.trim(), true)
         } catch (error: Exception) {
             // Coroutine cancellation must propagate instead of being converted into a fallback.
             if (error is kotlinx.coroutines.CancellationException) throw error
-            TaskBarLog.w(TaskBarLog.NETWORK, "Offline quote fallback: ${error.javaClass.simpleName}")
+            logger.log(false, "Offline quote fallback: ${error.javaClass.simpleName}")
             DailyQuote("Большие результаты начинаются с маленьких действий.", "TaskBar", false)
         }
     }
