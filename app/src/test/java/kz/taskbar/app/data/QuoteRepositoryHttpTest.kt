@@ -26,7 +26,8 @@ class QuoteRepositoryHttpTest {
         val api = Retrofit.Builder().baseUrl(server.url("/"))
             .client(client).addConverterFactory(GsonConverterFactory.create())
             .build().create(QuoteApi::class.java)
-        repo = NetworkQuoteRepository(api, Dispatchers.IO)
+        // Network tests validate HTTP behavior, not Android framework logging.
+        repo = NetworkQuoteRepository(api, Dispatchers.IO, QuoteEventLogger { _, _ -> })
     }
     @After fun tearDown() { server.shutdown() }
 
