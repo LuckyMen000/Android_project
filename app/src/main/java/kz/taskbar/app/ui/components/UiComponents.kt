@@ -120,7 +120,7 @@ fun TaskItem(task: TaskEntity, onToggle: () -> Unit, onEdit: () -> Unit, onDelet
         }
         Spacer(Modifier.width(13.dp))
         Column(Modifier.weight(1f)) {
-            Text(task.title, color = if (task.completed) MaterialTheme.colorScheme.onSurfaceVariant else foreground,
+            Text(task.title, modifier = Modifier.testTag("task_item_title"), color = if (task.completed) MaterialTheme.colorScheme.onSurfaceVariant else foreground,
                 textDecoration = if (task.completed) TextDecoration.LineThrough else TextDecoration.None,
                 fontWeight = FontWeight.SemiBold, fontSize = 14.sp, lineHeight = 20.sp,
                 maxLines = 2, overflow = TextOverflow.Ellipsis)

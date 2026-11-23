@@ -1,9 +1,9 @@
 package kz.taskbar.app.ui
 
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
@@ -29,9 +29,13 @@ class TaskBarPage(private val rule: ComposeTestRule) {
 
     fun assertTaskVisible(title: String) = apply {
         rule.waitUntil(timeoutMillis = 15_000) {
-            rule.onAllNodesWithText(title).fetchSemanticsNodes().isNotEmpty()
+            // Only match a rendered task title, not the search field containing the same text.
+            rule.onAllNodesWithTag("task_item_title", useUnmergedTree = true)
+                .fetchSemanticsNodes().isNotEmpty()
         }
-        rule.onNodeWithText(title).assertIsDisplayed()
+        rule.onNodeWithTag("task_item_title", useUnmergedTree = true)
+            .assertTextEquals(title)
+            .assertIsDisplayed()
     }
 
     fun assertTasksPage() = apply { rule.onNodeWithTag("tasks_screen").assertExists() }
