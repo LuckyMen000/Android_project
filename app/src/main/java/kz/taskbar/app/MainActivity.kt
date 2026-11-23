@@ -3,6 +3,7 @@ package kz.taskbar.app
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -73,7 +74,7 @@ private fun TaskBarRoot() {
     val editorTask = tasks.firstOrNull { it.id == editorTaskId }
     var editorSequence by rememberSaveable { mutableIntStateOf(0) }
     var pendingDelete by remember { mutableStateOf<TaskEntity?>(null) }
-    val activity = LocalContext.current as? ComponentActivity
+    val activity = LocalActivity.current
 
     SideEffect {
         activity?.let { act ->
