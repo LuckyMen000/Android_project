@@ -8,6 +8,7 @@
         android:roundIcon="@drawable/ic_taskbar"
         android:supportsRtl="true"
         android:theme="@style/Theme.TaskBar">
+        <profileable android:shell="true" />
         <activity android:name=".MainActivity" android:exported="true"
             android:screenOrientation="unspecified">
             <intent-filter>

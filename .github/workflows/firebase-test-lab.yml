@@ -1,0 +1,67 @@
+name: TaskBar Firebase Test Lab (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      model_1:
+        description: "Valid Firebase model ID from gcloud firebase test android models list"
+        required: true
+        default: "MediumPhone.arm"
+      version_1:
+        description: "Available Android API version"
+        required: true
+        default: "34"
+      model_2:
+        description: "Second different Firebase model ID"
+        required: true
+        default: "Pixel2"
+      version_2:
+        description: "Available Android API version"
+        required: true
+        default: "30"
+
+permissions:
+  contents: read
+
+jobs:
+  firebase:
+    runs-on: ubuntu-latest
+    timeout-minutes: 70
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Build app and test APKs
+        run: |
+          chmod +x gradlew
+          sdkmanager --install "platforms;android-35" "build-tools;35.0.0"
+          ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: '${{ secrets.GCP_SA_KEY }}'
+      - uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: '${{ secrets.GCP_PROJECT_ID }}'
+      - name: Available Firebase devices (diagnostic)
+        run: gcloud firebase test android models list --format='table(id,brand,form)' | head -50
+      - name: Test on TWO Firebase devices
+        run: |
+          gcloud firebase test android run \
+            --app app/build/outputs/apk/debug/app-debug.apk \
+            --test app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk \
+            --device "model=${{ inputs.model_1 }},version=${{ inputs.version_1 }},locale=ru,orientation=portrait" \
+            --device "model=${{ inputs.model_2 }},version=${{ inputs.version_2 }},locale=ru,orientation=portrait" \
+            --timeout 20m
+      - name: Upload build outputs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: taskbar-firebase-apks
+          if-no-files-found: warn
+          path: |
+            app/build/outputs/apk/debug/*.apk
+            app/build/outputs/apk/androidTest/debug/*.apk

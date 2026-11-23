@@ -13,4 +13,4 @@ dependencyResolutionManagement {
     }
 }
 rootProject.name = "TaskBar"
-include(":app")
+include(":app", ":benchmark")

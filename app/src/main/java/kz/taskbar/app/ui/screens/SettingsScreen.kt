@@ -15,6 +15,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -25,7 +26,8 @@ import kz.taskbar.app.ui.theme.TB
 
 @Composable
 fun SettingsScreen(isDark: Boolean, tasks: List<TaskEntity>,
-                   onDarkChange: (Boolean)->Unit, onClearCompleted: ()->Unit) {
+                   onDarkChange: (Boolean)->Unit, onClearCompleted: ()->Unit,
+                   onOpenDebugLab: (() -> Unit)? = null) {
     var confirmClear by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())
         .padding(horizontal=22.dp)) {
@@ -97,6 +99,28 @@ fun SettingsScreen(isDark: Boolean, tasks: List<TaskEntity>,
                     color=MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Icon(Icons.Outlined.ChevronRight, null, tint=MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        if (onOpenDebugLab != null) {
+            Spacer(Modifier.height(25.dp))
+            SmallEyebrow("ДЛЯ РАЗРАБОТКИ", color=TB.Lime)
+            Spacer(Modifier.height(12.dp))
+            Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(23.dp))
+                .background(MaterialTheme.colorScheme.surface)
+                .border(1.dp, TB.Lime.copy(alpha=.45f), RoundedCornerShape(23.dp))
+                .testTag("debug_lab_entry").clickable(onClick=onOpenDebugLab).padding(19.dp),
+                verticalAlignment=Alignment.CenterVertically) {
+                Icon(Icons.Outlined.BugReport, null, tint=TB.Lime,
+                    modifier=Modifier.size(27.dp))
+                Spacer(Modifier.width(15.dp))
+                Column(Modifier.weight(1f)) {
+                    Text("Лаборатория отладки", color=MaterialTheme.colorScheme.onSurface,
+                        fontWeight=FontWeight.Bold, fontSize=15.sp)
+                    Spacer(Modifier.height(5.dp))
+                    Text("РГР №3 · Отладка, тестирование, профилирование",
+                        color=MaterialTheme.colorScheme.onSurfaceVariant, fontSize=10.sp)
+                }
+                Icon(Icons.Outlined.ChevronRight, null, tint=TB.Lime)
+            }
         }
         Spacer(Modifier.height(29.dp))
         SmallEyebrow("О ПРИЛОЖЕНИИ")

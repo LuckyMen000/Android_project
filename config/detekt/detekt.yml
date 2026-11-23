@@ -1,0 +1,14 @@
+# Small but enforced static-analysis profile; Android Lint runs separately.
+# Long-standing concise Compose files are not auto-reformatted for this RGR.
+potential-bugs:
+  active: true
+  DoubleMutabilityForCollection:
+    active: true
+  EqualsAlwaysReturnsTrueOrFalse:
+    active: true
+  IteratorHasNextCallsNextMethod:
+    active: true
+  MapGetWithNotNullAssertionOperator:
+    active: true
+  UnconditionalJumpStatementInLoop:
+    active: true

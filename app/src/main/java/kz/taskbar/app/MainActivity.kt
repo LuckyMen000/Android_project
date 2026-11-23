@@ -1,5 +1,6 @@
 package kz.taskbar.app
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -22,6 +23,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -29,6 +32,7 @@ import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kz.taskbar.app.data.TaskEntity
+import kz.taskbar.app.diagnostics.TaskBarLog
 import kz.taskbar.app.ui.TaskViewModel
 import kz.taskbar.app.ui.components.TaskEditorSheet
 import kz.taskbar.app.ui.screens.HomeScreen
@@ -41,6 +45,7 @@ import kz.taskbar.app.ui.theme.TaskBarTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        TaskBarLog.i(TaskBarLog.APP, "MainActivity.onCreate")
         WindowCompat.setDecorFitsSystemWindows(window, false)
         window.statusBarColor = android.graphics.Color.TRANSPARENT
         window.navigationBarColor = android.graphics.Color.TRANSPARENT
@@ -63,9 +68,10 @@ private fun TaskBarRoot() {
     val dark by vm.isDark.collectAsStateWithLifecycle()
     val quote by vm.quote.collectAsStateWithLifecycle()
     var page by rememberSaveable { mutableStateOf(Page.TODAY) }
-    var showEditor by remember { mutableStateOf(false) }
-    var editorTask by remember { mutableStateOf<TaskEntity?>(null) }
-    var editorSequence by remember { mutableIntStateOf(0) }
+    var showEditor by rememberSaveable { mutableStateOf(false) }
+    var editorTaskId by rememberSaveable { mutableLongStateOf(0L) }
+    val editorTask = tasks.firstOrNull { it.id == editorTaskId }
+    var editorSequence by rememberSaveable { mutableIntStateOf(0) }
     var pendingDelete by remember { mutableStateOf<TaskEntity?>(null) }
     val activity = LocalContext.current as? ComponentActivity
 
@@ -78,18 +84,18 @@ private fun TaskBarRoot() {
         }
     }
     val openNew = {
-        editorTask = null
+        editorTaskId = 0L
         editorSequence++
         showEditor = true
     }
     val openEdit: (TaskEntity) -> Unit = {
-        editorTask = it
+        editorTaskId = it.id
         editorSequence++
         showEditor = true
     }
 
     TaskBarTheme(darkTheme = dark) {
-        Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+        Surface(Modifier.fillMaxSize().semantics { testTagsAsResourceId = true }, color = MaterialTheme.colorScheme.background) {
             Box(Modifier.fillMaxSize().statusBarsPadding()) {
                 Box(Modifier.fillMaxSize().padding(bottom = 116.dp)) {
                     when (page) {
@@ -101,7 +107,11 @@ private fun TaskBarRoot() {
                             onEdit = openEdit, onDelete = { pendingDelete = it })
                         Page.INSIGHTS -> InsightsScreen(tasks)
                         Page.SETTINGS -> SettingsScreen(dark, tasks,
-                            onDarkChange = { vm.setDark(it) }, onClearCompleted = { vm.clearCompleted() })
+                            onDarkChange = { vm.setDark(it) }, onClearCompleted = { vm.clearCompleted() },
+                            onOpenDebugLab = if (BuildConfig.DEBUG && activity != null) ({
+                                activity.startActivity(Intent().setClassName(activity,
+                                    "kz.taskbar.app.debug.DebugLabActivity"))
+                            }) else null)
                     }
                 }
                 BottomDock(page, onSelect = { page = it },
@@ -111,7 +121,7 @@ private fun TaskBarRoot() {
                         .navigationBarsPadding().padding(bottom = 67.dp))
             }
         }
-        if (showEditor) {
+        if (showEditor && (editorTaskId == 0L || editorTask != null)) {
             key(editorSequence) {
                 TaskEditorSheet(task = editorTask, onDismiss = { showEditor = false },
                     onSave = { draft ->

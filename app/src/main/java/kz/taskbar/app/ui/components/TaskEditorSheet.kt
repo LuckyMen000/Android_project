@@ -14,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,12 +41,12 @@ import java.util.Locale
 fun TaskEditorSheet(task: TaskEntity?, onDismiss: () -> Unit, onSave: (TaskDraft) -> Unit) {
     val context = LocalContext.current
     val sheet = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    var title by remember { mutableStateOf(task?.title.orEmpty()) }
-    var description by remember { mutableStateOf(task?.description.orEmpty()) }
-    var category by remember { mutableStateOf(TaskCategory.fromValue(task?.category ?: "WORK")) }
-    var priority by remember { mutableStateOf(TaskPriority.fromValue(task?.priority ?: "MEDIUM")) }
-    var dueAt by remember { mutableLongStateOf(task?.dueAt ?: timeToday(18)) }
-    var showValidation by remember { mutableStateOf(false) }
+    var title by rememberSaveable(task?.id) { mutableStateOf(task?.title.orEmpty()) }
+    var description by rememberSaveable(task?.id) { mutableStateOf(task?.description.orEmpty()) }
+    var category by rememberSaveable(task?.id) { mutableStateOf(TaskCategory.fromValue(task?.category ?: "WORK")) }
+    var priority by rememberSaveable(task?.id) { mutableStateOf(TaskPriority.fromValue(task?.priority ?: "MEDIUM")) }
+    var dueAt by rememberSaveable(task?.id) { mutableLongStateOf(task?.dueAt ?: timeToday(18)) }
+    var showValidation by rememberSaveable(task?.id) { mutableStateOf(false) }
     val validation = TaskValidator.validate(title, description)
 
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheet,
@@ -78,7 +79,7 @@ fun TaskEditorSheet(task: TaskEntity?, onDismiss: () -> Unit, onSave: (TaskDraft
             Spacer(Modifier.height(9.dp))
             OutlinedTextField(value=description,
                 onValueChange={ if(it.length<=TaskValidator.MAX_DESCRIPTION) description=it },
-                modifier=Modifier.fillMaxWidth().heightIn(min=102.dp), minLines=3,
+                modifier=Modifier.fillMaxWidth().testTag("task_description_input").heightIn(min=102.dp), minLines=3,
                 placeholder={Text("Добавь детали, если нужно...")},
                 shape=RoundedCornerShape(17.dp), colors=editorFieldColors())
 

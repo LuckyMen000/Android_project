@@ -15,6 +15,7 @@ data class TaskEntity(
     val createdAt: Long = System.currentTimeMillis(),
     val completed: Boolean = false,
     val completedAt: Long? = null,
+    @androidx.room.ColumnInfo(defaultValue = "0") val archived: Boolean = false,
 )
 
 fun TaskEntity.asDraft() = TaskDraft(

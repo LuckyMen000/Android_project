@@ -7,3 +7,11 @@ local.properties
 /captures/
 .externalNativeBuild/
 .DS_Store
+
+# Real evidence is collected locally; do not commit screenshots with personal data by accident.
+evidence/
+*.hprof
+*.trace
+*.perfetto-trace
+*.apk
+*.aab

@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import kz.taskbar.app.TaskBarApplication
+import kz.taskbar.app.diagnostics.TaskOperationTracker
 import kz.taskbar.app.data.DailyQuote
 import kz.taskbar.app.data.PreferencesRepository
 import kz.taskbar.app.data.QuoteRepository
@@ -15,6 +16,8 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Job
 
 class TaskViewModel(
     private val repository: TaskRepository,
@@ -31,16 +34,23 @@ class TaskViewModel(
     val quote: StateFlow<DailyQuote> = _quote
 
     init {
-        viewModelScope.launch { repository.populateIfFirstLaunch() }
+        tracked { repository.populateIfFirstLaunch() }
         refreshQuote()
     }
 
-    fun save(draft: TaskDraft) = viewModelScope.launch { repository.save(draft) }
-    fun toggle(task: TaskEntity) = viewModelScope.launch { repository.setCompleted(task, !task.completed) }
-    fun delete(task: TaskEntity) = viewModelScope.launch { repository.delete(task) }
-    fun clearCompleted() = viewModelScope.launch { repository.clearCompleted() }
-    fun setDark(enabled: Boolean) = viewModelScope.launch { preferences.setDarkTheme(enabled) }
-    fun refreshQuote() = viewModelScope.launch { _quote.value = quotes.getQuote() }
+    private fun tracked(block: suspend () -> Unit): Job = viewModelScope.launch(
+        start = CoroutineStart.UNDISPATCHED,
+    ) {
+        TaskOperationTracker.begin()
+        try { block() } finally { TaskOperationTracker.end() }
+    }
+
+    fun save(draft: TaskDraft) = tracked { repository.save(draft) }
+    fun toggle(task: TaskEntity) = tracked { repository.setCompleted(task, !task.completed) }
+    fun delete(task: TaskEntity) = tracked { repository.delete(task) }
+    fun clearCompleted() = tracked { repository.clearCompleted() }
+    fun setDark(enabled: Boolean) = tracked { preferences.setDarkTheme(enabled) }
+    fun refreshQuote() = tracked { _quote.value = quotes.getQuote() }
 
     class Factory(private val app: TaskBarApplication) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
