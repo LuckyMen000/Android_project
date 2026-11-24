@@ -67,6 +67,14 @@ kapt {
 
 jacoco { toolVersion = "0.8.13" }
 
+// Robolectric resolves Android runtime jars separately from Gradle dependencies.
+// GitHub-hosted runners may get HTTP 429 from the legacy repo1.maven.org host.
+// Use the canonical Maven Central repository without changing or skipping tests.
+tasks.withType<org.gradle.api.tasks.testing.Test>().configureEach {
+    systemProperty("robolectric.dependency.repo.url", "https://repo.maven.apache.org/maven2")
+    systemProperty("robolectric.dependency.repo.id", "central")
+}
+
 detekt {
     buildUponDefaultConfig = false
     allRules = false
